@@ -1,10 +1,4 @@
 --!strict
-type SpriteImage = {
-	url: string,
-	width: number,
-	height: number
-}
-
 type SpriteSheet = {
 	display: (cell: number) -> (),
 	isFlipped: () -> (),

@@ -25,7 +25,7 @@ local mySpriteSheet = EasySprite.new(
 mySpriteSheet.display(1) --displays the first cell (counted from left to right)
 mySpriteSheet.flip() --flips the spritesheet horizontally
 
-mySequence = SpriteSequence.fromRange(mySpriteSheet, 1, 10) --create a sequence from cell 1 to 10
+local mySequence = SpriteSequence.fromRange(mySpriteSheet, 1, 10) --create a sequence from cell 1 to 10
 mySequence.play(framesPerSecond, isLooping) --play the sequence with chosen playback speed
 
 task.wait(5)
