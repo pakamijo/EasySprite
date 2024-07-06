@@ -13,7 +13,6 @@ This decision was made as to not force users into the frame cycle events, in cas
 Using this library is very straightforward:
 
 ```lua
-local rs = game:GetService('ReplicatedStorage')
 local EasySprite, SpriteSequence = require(pathToEasySprite), require(pathToSpriteSequencer)
 
 local mySpriteSheet = EasySprite.new(
@@ -34,3 +33,6 @@ mySequence.stop()
 ```
 Under the hood, all EasySprite does is abstract the math used with ImageRectOffset and ImageRectSize necessary to
 create the array of sprites.
+
+
+Special thanks to 0bBinary for creating Simple Sprite.
