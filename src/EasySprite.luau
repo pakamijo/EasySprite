@@ -1,4 +1,7 @@
 --!strict
+
+--version 1.0.1
+
 type SpriteSheet = {
 	display: (cell: number) -> (),
 	isFlipped: () -> (),
@@ -46,7 +49,7 @@ function constructor.new(label: ImageLabel, assetUrl: string, imgSize: Vector2, 
 	local columns, rows
 	do
 		local ratio = imgSize/cellSize
-		columns, rows = ratio.X, ratio.Y
+		columns, rows = math.floor(ratio.X), math.floor(ratio.Y)
 	end
 	
 	label.Image = assetUrl
