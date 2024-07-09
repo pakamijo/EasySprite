@@ -1,6 +1,6 @@
 --!strict
 
---Version 1.1
+--Version 1.1.1
 
 type CellData = {
 	offset: Vector2,
@@ -59,6 +59,8 @@ local function newSpriteSheet(images: {CellData}, label: ImageLabel): SpriteShee
 		for _, cell in sheet._frames do
 			images[#images+1] = cell
 		end
+		
+		spritesheet.totalCells = #images
 	end
 	
 	
