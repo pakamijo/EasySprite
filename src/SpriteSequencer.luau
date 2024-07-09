@@ -15,7 +15,7 @@ type Sequence = {
 	cells: {number},
 	framerate: number,
 	
-	play: (fps: number ,looping: boolean?) -> (),
+	play: (fps: number, looping: boolean?) -> (),
 	stop: () -> (),
 	_nextFrame: (now: number) -> (),
 	

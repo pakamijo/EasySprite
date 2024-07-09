@@ -1,32 +1,49 @@
 --!strict
 
---version 1.0.1
+--Version 1.1
+
+type CellData = {
+	offset: Vector2,
+	url: string,
+	size: Vector2
+}
 
 type SpriteSheet = {
-	display: (cell: number) -> (),
-	isFlipped: () -> (),
-	flip: () -> (),
 	totalCells: number,
 	currentCell: number,
-	instance: ImageLabel
+	instance: ImageLabel,
+	_frames: {CellData},
+	
+	display: (cellIndex: number) -> (),
+	isFlipped: () -> (),
+	flip: () -> (),
+	extend: (sheet: SpriteSheet) -> ()
 }
 
 local constructor = {}
 
-local function newSpriteSheet(images: {Vector2}, label: ImageLabel): SpriteSheet
+local function sameVectors(v1: Vector2, v2: Vector2)
+	return v1.X^2 == v2.X^2 and v1.Y^2 == v2.Y^2
+end
+
+local function newSpriteSheet(images: {CellData}, label: ImageLabel): SpriteSheet
 	local spritesheet = {} :: SpriteSheet
 	spritesheet.totalCells = #images
 	spritesheet.instance = label
+	spritesheet._frames = images
 	
-	function spritesheet.display(cell)
-		assert(images[cell], `index {cell} out of range in spritesheet`)
+	function spritesheet.display(cellIndex)
+		assert(images[cellIndex], `index {cellIndex} out of range in spritesheet`)
+		local cell = images[cellIndex]
+		if label.Image ~= cell.url then label.Image = cell.url end
+		if not sameVectors(label.ImageRectSize, cell.size) then label.ImageRectSize = cell.size end
 		
 		label.ImageRectOffset = 
 			if spritesheet.isFlipped()
-			then images[cell] - Vector2.xAxis*label.ImageRectSize.X
-			else images[cell]
+			then cell.offset - Vector2.xAxis*label.ImageRectSize.X
+			else cell.offset
 		
-		spritesheet.currentCell = cell
+		spritesheet.currentCell = cellIndex
 	end
 	
 	function spritesheet.flip()
@@ -38,8 +55,14 @@ local function newSpriteSheet(images: {Vector2}, label: ImageLabel): SpriteSheet
 		return label.ImageRectSize.X < 0
 	end
 	
-	spritesheet.display(1)
+	function spritesheet.extend(sheet)
+		for _, cell in sheet._frames do
+			images[#images+1] = cell
+		end
+	end
 	
+	
+	spritesheet.display(1)
 	return spritesheet
 end
 
@@ -56,14 +79,18 @@ function constructor.new(label: ImageLabel, assetUrl: string, imgSize: Vector2, 
 	label.ImageRectSize = cellSize
 	label.ImageRectOffset = Vector2.zero
 	
-	local images: {Vector2} = {}
+	local images = {} :: {CellData}
 	
 	do --create image array from grid
 		local y = 0
 		repeat
 			local x = 0
 			repeat
-				images[y*rows + x+1] = Vector2.new(cellSize.X*x, cellSize.Y*y)
+				images[y*columns + x+1] = {
+					offset = Vector2.new(cellSize.X*x, cellSize.Y*y),
+					url = assetUrl,
+					size = cellSize
+				}
 				x += 1
 			until x >= columns
 			y += 1
