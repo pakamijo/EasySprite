@@ -1,4 +1,6 @@
 --!strict
+--!native
+
 local RunService = game:GetService('RunService')
 
 type SpriteSheet = {
@@ -17,6 +19,7 @@ type Sequence = {
 	
 	play: (fps: number, looping: boolean?) -> (),
 	stop: () -> (),
+	isPlaying: () -> boolean,
 	_nextFrame: (now: number) -> (),
 	
 }
@@ -79,6 +82,10 @@ function constructor.new(spritesheet: SpriteSheet, cells: {number})
 		
 		activeSequences[spritesheet.instance] = sequence
 		
+	end
+	
+	function sequence.isPlaying()
+		return activeSequences[spritesheet.instance] == sequence
 	end
 	
 	local current_sequence_index = 0
