@@ -49,7 +49,7 @@ do
 		for instance, sequence in activeSequences do
 			if not instance or not instance.Parent then
 				sequence.stop()
-				return
+				continue
 			end
 			
 			sequence._nextFrame(now)

@@ -1,7 +1,7 @@
 --!strict
 --!native
 
---Version 1.2.0
+--Version 1.2.1
 
 type CellData = {
 	offset: Vector2,
@@ -34,7 +34,7 @@ local function newSpriteSheet(images: {CellData}, label: ImageLabel): SpriteShee
 	spritesheet._frames = images
 	
 	function spritesheet.display(cellIndex)
-		assert(images[cellIndex], `index {cellIndex} out of range in spritesheet`)
+		if not images[cellIndex] then error(`index {cellIndex} out of range in spritesheet`) end
 		local cell = images[cellIndex]
 		if label.Image ~= cell.url then label.Image = cell.url end
 		if not sameVectors(label.ImageRectSize, cell.size) then label.ImageRectSize = cell.size end
