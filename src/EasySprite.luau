@@ -1,7 +1,7 @@
 --!strict
 --!native
 
---Version 1.4.0
+--Version 1.5.0
 
 type CellData = {
 	offset: Vector2,

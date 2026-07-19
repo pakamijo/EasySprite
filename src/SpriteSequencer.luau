@@ -3,6 +3,20 @@
 
 local RunService = game:GetService('RunService')
 
+-- Signal types
+type Connection = {
+	Disconnect: () -> ()
+}
+
+type Signal = {
+	Connect: (self: Signal, callback: () -> ()) -> Connection,
+	Fire: (self: Signal) -> (),
+	Destroy: (self: Signal) -> (),
+}
+
+--replace with custom signal library if desired
+local createSignal: () -> Signal
+
 type SpriteSheet = {
 	display: (cell: number) -> (),
 	--...
@@ -11,16 +25,22 @@ type SpriteSheet = {
 
 type Sequence = {
 	looping: boolean,
+	reverses: boolean,
 	cells: {number},
 	framerate: number,
 	
-	play: (fps: number, looping: boolean?) -> (),
+	play: (fps: number, looping: boolean?, reverses: boolean?) -> (),
 	stop: () -> (),
 	isPlaying: () -> boolean,
 	destroy: () -> (),
 	Destroy: () -> (),
 
 	_nextFrame: (now: number) -> (),
+	_previousFrame: (now: number) -> (),
+	_playingInReverse: boolean,
+	
+	-- replace the bindable with our custom Signal
+	didLoop: Signal, 
 }
 
 local MAX_FPS = 60
@@ -50,7 +70,11 @@ do
 				continue
 			end
 			
-			sequence._nextFrame(now)
+			if sequence._playingInReverse then
+				sequence._previousFrame(now)
+			else
+				sequence._nextFrame(now)
+			end
 		end
 	end)
 end
@@ -61,12 +85,18 @@ local constructor = {}
 function constructor.new(spritesheet: SpriteSheet, cells: {number})
 	local sequence = {
 		looping = false,
+		reverses = false,
 		cells = cells,
 		framerate = MAX_FPS,
+		_playingInReverse = false,
+		didLoop = createSignal() 
 	} :: Sequence
-	
-	function sequence.play(fps: number, looping: boolean?)
-		looping = looping or false; fps = fps or MAX_FPS
+
+	function sequence.play(fps: number, looping: boolean?, reverses: boolean?)
+		reverses = reverses or false
+		looping = looping or false
+		fps = fps or MAX_FPS
+		sequence.reverses = reverses :: boolean
 		sequence.looping = looping :: boolean
 		sequence.framerate = fps
 		
@@ -97,8 +127,35 @@ function constructor.new(spritesheet: SpriteSheet, cells: {number})
 		
 		if current_sequence_index >= #cells then
 			if sequence.looping then
-				current_sequence_index = 0
+				if sequence.reverses then
+					sequence._playingInReverse = true
+				else
+					current_sequence_index = 0
+					sequence.didLoop:Fire() 
+				end
 			else
+				if sequence.reverses then
+					sequence._playingInReverse = true
+				else
+					sequence.stop()
+				end
+			end
+		end
+	end
+	
+	function sequence._previousFrame(now: number)
+		if now - last_execution <  1/sequence.framerate then return end
+		last_execution = now
+		
+		current_sequence_index -= 1
+		spritesheet.display(cells[current_sequence_index])
+		
+		if current_sequence_index <= 1 then
+			if sequence.looping then
+				sequence._playingInReverse = false
+				sequence.didLoop:Fire() 
+			else
+				sequence._playingInReverse = false
 				sequence.stop()
 			end
 		end
@@ -106,6 +163,7 @@ function constructor.new(spritesheet: SpriteSheet, cells: {number})
 	
 	function sequence.stop()
 		current_sequence_index = 0
+		sequence._playingInReverse = false
 		
 		local activesequence = activeSequences[spritesheet.instance]
 		if not activesequence then return end
@@ -116,6 +174,8 @@ function constructor.new(spritesheet: SpriteSheet, cells: {number})
 	
 	function sequence.destroy()
 		sequence.stop()
+
+		sequence.didLoop:Destroy()
 
 		table.clear(sequence.cells)
 		table.clear(sequence)
@@ -142,6 +202,36 @@ function constructor.fromRange(spritesheet: SpriteSheet, from: number, to: numbe
 	for i = from, to do cells[#cells+1] = i end
 	
 	return constructor.new(spritesheet, cells)
+end
+
+-- lightweight signal implementation
+createSignal = function(): Signal
+	local listeners = {}
+	local signal = {}
+	
+	function signal:Connect(callback)
+		local node = { callback = callback }
+		listeners[node] = true
+		
+		return {
+			Disconnect = function()
+				listeners[node] = nil
+			end
+		}
+	end
+	
+	function signal:Fire()
+		for node in listeners do
+			task.spawn(node.callback) 
+		end
+	end
+	
+	function signal:Destroy()
+		table.clear(listeners)
+		table.clear(signal)
+	end
+
+	return signal :: Signal
 end
 
 return constructor
